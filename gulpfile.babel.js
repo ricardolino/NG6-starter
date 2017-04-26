@@ -17,7 +17,7 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import colorsSupported      from 'supports-color';
 import historyApiFallback   from 'connect-history-api-fallback';
 
-let root = 'client';
+let root = 'src';
 
 // helper method for resolving paths
 let resolveToApp = (glob = '') => {
@@ -28,9 +28,16 @@ let resolveToComponents = (glob = '') => {
   return path.join(root, 'app/components', glob); // app/components/{glob}
 };
 
+let resolveToPages = (glob = '') => {
+  return path.join(root, 'app/pages', glob); // app/pages/{glob}
+};
+
 // map of all paths
 let paths = {
-  js: resolveToComponents('**/*!(.spec.js).js'), // exclude spec files
+  js: [
+    resolveToComponents('**/*!(.spec.js).js'), 
+    resolveToPages('**/*!(.spec.js).js')
+  ], // exclude spec files
   scss: resolveToApp('**/*.scss'), // stylesheets
   html: [
     resolveToApp('**/*.html'),
@@ -41,7 +48,8 @@ let paths = {
     path.join(__dirname, root, 'app/app.js')
   ],
   output: root,
-  blankTemplates: path.join(__dirname, 'generator', 'component/**/*.**'),
+  blankComponentTemplates: path.join(__dirname, 'generator', 'component/**/*.**'),
+  blankPageTemplates: path.join(__dirname, 'generator', 'page/**/*.**'),
   dest: path.join(__dirname, 'dist')
 };
 
@@ -97,6 +105,29 @@ gulp.task('serve', () => {
 
 gulp.task('watch', ['serve']);
 
+let generatorTask = () => {
+  const cap = (val) => {
+    return val.charAt(0).toUpperCase() + val.slice(1);
+  };
+
+  const name = yargs.argv.name;
+  const parentPath = yargs.argv.parent || '';
+  const destPath = path.join(resolveToPages(), parentPath, name);
+
+  return gulp.src(paths.blankPageTemplates)
+    .pipe(template({
+      name: name,
+      upCaseName: cap(name)
+    }))
+    .pipe(rename((path) => {
+      path.basename = path.basename.replace('temp', name);
+    }))
+    .pipe(gulp.dest(destPath));
+}
+
+// gulp.task('component', generatorTask(resolveToComponents, paths.blankComponentTemplates));
+// gulp.task('page', generatorTask(resolveToPages, paths.blankPageTemplates));
+
 gulp.task('component', () => {
   const cap = (val) => {
     return val.charAt(0).toUpperCase() + val.slice(1);
@@ -105,7 +136,26 @@ gulp.task('component', () => {
   const parentPath = yargs.argv.parent || '';
   const destPath = path.join(resolveToComponents(), parentPath, name);
 
-  return gulp.src(paths.blankTemplates)
+  return gulp.src(paths.blankComponentTemplates)
+    .pipe(template({
+      name: name,
+      upCaseName: cap(name)
+    }))
+    .pipe(rename((path) => {
+      path.basename = path.basename.replace('temp', name);
+    }))
+    .pipe(gulp.dest(destPath));
+});
+
+gulp.task('page', () => {
+  const cap = (val) => {
+    return val.charAt(0).toUpperCase() + val.slice(1);
+  };
+  const name = yargs.argv.name;
+  const parentPath = yargs.argv.parent || '';
+  const destPath = path.join(resolveToPages(), parentPath, name);
+
+  return gulp.src(paths.blankPageTemplates)
     .pipe(template({
       name: name,
       upCaseName: cap(name)

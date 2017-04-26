@@ -54,6 +54,7 @@
   "scripts": {
     "build": "gulp webpack",
     "component": "gulp component",
+    "page": "gulp page",
     "serve": "gulp serve",
     "start": "gulp serve",
     "test": "karma start",
